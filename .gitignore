@@ -1,0 +1,7 @@
+node_modules/
+.cursor/
+.claude/
+.codex/
+.env
+dist/
+docs/
