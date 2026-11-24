@@ -2232,7 +2232,11 @@ async function scanTextNodes(params) {
     }
   }
 
-  // Send completed progress update
+  // Send a lightweight completion signal. The per-chunk results were already
+  // streamed to the server via progress updates (chunkResult), so this frame
+  // intentionally carries NO node payload — otherwise a large scan would emit a
+  // single frame that blows past the WebSocket frame limit and the scan would
+  // time out. The server reassembles the full result from the streamed chunks.
   sendProgressUpdate(
     commandId,
     "scan_text_nodes",
@@ -2242,7 +2246,6 @@ async function scanTextNodes(params) {
     processedNodes,
     `Scan complete. Found ${allTextNodes.length} text nodes.`,
     {
-      textNodes: allTextNodes,
       processedNodes,
       chunks: chunksProcessed,
     }
@@ -2250,11 +2253,11 @@ async function scanTextNodes(params) {
 
   return {
     success: true,
+    streamed: true,
     message: `Chunked scan complete. Found ${allTextNodes.length} text nodes.`,
     totalNodes: allTextNodes.length,
     processedNodes: processedNodes,
     chunks: chunksProcessed,
-    textNodes: allTextNodes,
     commandId,
   };
 }

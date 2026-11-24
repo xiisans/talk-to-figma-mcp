@@ -69,6 +69,9 @@ const pendingRequests = new Map<string, {
   reject: (reason: unknown) => void;
   timeout: ReturnType<typeof setTimeout>;
   lastActivity: number; // Add timestamp for last activity
+  // Accumulates per-chunk results streamed via progress updates, so a large
+  // scan never has to return its whole payload in one WebSocket frame.
+  batches?: any[][];
 }>();
 
 // Track which channel each client is in
@@ -1511,13 +1514,16 @@ server.tool(
           totalNodes: number,
           processedNodes: number,
           chunks: number,
+          streamed?: boolean,
           textNodes: Array<any>
         };
 
+        const textNodes = Array.isArray(typedResult.textNodes) ? typedResult.textNodes : [];
         const summaryText = `
         Scan completed:
-        - Found ${typedResult.totalNodes} text nodes
+        - Found ${textNodes.length} text nodes
         - Processed in ${typedResult.chunks} chunks
+        - Delivery: ${typedResult.streamed ? "streamed in batches (reassembled server-side)" : "single response"}
         `;
 
         return {
@@ -1529,7 +1535,7 @@ server.tool(
             },
             {
               type: "text" as const,
-              text: JSON.stringify(typedResult.textNodes, null, 2)
+              text: JSON.stringify(textNodes, null, 2)
             }
           ],
         };
@@ -2916,6 +2922,14 @@ function connectToFigma(port: number = 3055) {
           // Log progress
           logger.info(`Progress update for ${progressData.commandType}: ${progressData.progress}% - ${progressData.message}`);
 
+          // Accumulate streamed chunk results so the final response can be
+          // reassembled without the plugin sending one oversized frame.
+          const chunkResult = progressData.payload?.chunkResult;
+          if (Array.isArray(chunkResult)) {
+            if (!request.batches) request.batches = [];
+            request.batches.push(chunkResult);
+          }
+
           // For completed updates, we could resolve the request early if desired
           if (progressData.status === 'completed' && progressData.progress === 100) {
             // Optionally resolve early with partial data
@@ -2946,10 +2960,26 @@ function connectToFigma(port: number = 3055) {
         if (myResponse.error) {
           logger.error(`Error from Figma: ${myResponse.error}`);
           request.reject(new Error(myResponse.error));
-        } else {
-          if (myResponse.result) {
-            request.resolve(myResponse.result);
+        } else if (myResponse.result) {
+          // A streamed scan sends only a lightweight completion signal; the
+          // node payload arrived earlier, one chunk at a time. Reassemble it
+          // here so callers still receive the full result in the old shape.
+          // If the plugin already included the payload (legacy), keep that.
+          let result = myResponse.result;
+          if (
+            result &&
+            typeof result === "object" &&
+            result.streamed === true &&
+            !Array.isArray(result.textNodes) &&
+            request.batches
+          ) {
+            const textNodes = request.batches.flat();
+            logger.info(
+              `Reassembled streamed scan: ${textNodes.length} text nodes from ${request.batches.length} chunks`
+            );
+            result = { ...result, textNodes };
           }
+          request.resolve(result);
         }
 
         pendingRequests.delete(myResponse.id);
