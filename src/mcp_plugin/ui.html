@@ -16,6 +16,7 @@
         --muted: rgba(17, 17, 17, 0.4);
         --icon: rgba(17, 17, 17, 0.3);
         --primary: #3e52ff;
+        --primary-hover: #5165ff;
         --primary-soft: rgba(62, 128, 252, 0.1);
       }
 
@@ -30,7 +31,8 @@
           --muted: rgba(255, 255, 255, 0.4);
           --icon: rgba(255, 255, 255, 0.3);
           --primary: #2f46ff;
-          --primary-soft: rgba(62, 128, 252, 0.18);
+          --primary-hover: #1e35ed;
+          --primary-soft: rgba(62, 128, 252, 0.1);
         }
       }
 
@@ -82,6 +84,10 @@
         font-size: 10px;
         font-weight: 500;
         line-height: 20px;
+        transition: color 300ms ease;
+      }
+      .locale-button:not(.active):hover {
+        color: var(--text);
       }
       .locale-button.active {
         color: var(--text);
@@ -149,6 +155,7 @@
         padding: 0;
         background: transparent;
         color: var(--icon);
+        transition: color 300ms ease;
       }
       .icon-button::before {
         position: absolute;
@@ -177,7 +184,11 @@
         background: var(--primary);
         color: #ffffff;
         font-size: 14px;
-        font-weight: 400;
+        font-weight: 500;
+        transition: background 300ms ease;
+      }
+      .primary-button:not(:disabled):hover {
+        background: var(--primary-hover);
       }
       .loading-dots {
         display: block;
@@ -232,6 +243,10 @@
         border-radius: 2px;
         background: var(--primary);
         color: #ffffff;
+        transition: background 300ms ease;
+      }
+      .copy-button:not(:disabled):hover {
+        background: var(--primary-hover);
       }
       .copy-button svg { display: block; width: 12px; height: 12px; }
       .connected-button {
@@ -243,6 +258,10 @@
         color: var(--primary);
         font-size: 14px;
         font-weight: 500;
+        transition: background 300ms ease;
+      }
+      .connected-button:not(:disabled):hover {
+        background: rgba(62, 128, 252, 0.05);
       }
       .progress-container { display: none; }
     </style>
