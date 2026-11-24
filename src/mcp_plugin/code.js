@@ -5,6 +5,7 @@
 const state = {
   serverPort: 3055, // Default port
 };
+const CHANNEL_SETTINGS_KEY = "channelSettings";
 
 
 // Helper function for progress updates
@@ -55,7 +56,7 @@ async function sendProgressUpdate(
 }
 
 // Show UI
-figma.showUI(__html__, { width: 350, height: 240 });
+figma.showUI(__html__, { width: 360, height: 320 });
 
 // Initialize anonymous analytics client_id (persisted via clientStorage)
 (async () => {
@@ -107,20 +108,30 @@ figma.ui.onmessage = async (msg) => {
   }
 };
 
-// Listen for plugin commands from menu
-figma.on("run", ({ command }) => {
-  figma.ui.postMessage({ type: "auto-connect" });
-});
-
 // Update plugin settings
 function updateSettings(settings) {
   if (settings.serverPort) {
     state.serverPort = settings.serverPort;
   }
 
-  figma.clientStorage.setAsync("settings", {
-    serverPort: state.serverPort,
-  });
+  if (typeof settings.channel === "string" && /^WS\d{6}$/.test(settings.channel)) {
+    const usedNumbers = Array.isArray(settings.usedNumbers)
+      ? settings.usedNumbers.filter(
+          (number) => typeof number === "string" && /^\d{6}$/.test(number)
+        )
+      : [];
+    usedNumbers.push(settings.channel.slice(2));
+    figma.root.setPluginData(
+      CHANNEL_SETTINGS_KEY,
+      JSON.stringify({
+        channel: settings.channel,
+        usedNumbers: [...new Set(usedNumbers)],
+      })
+    );
+  }
+
+  figma.clientStorage.setAsync("settings", { serverPort: state.serverPort })
+    .catch((error) => console.error("Error saving server port:", error));
 }
 
 // Handle commands from UI
@@ -1717,17 +1728,42 @@ async function setTextContent(params) {
         state.serverPort = savedSettings.serverPort;
       }
     }
-
-    // Send initial settings to UI
-    figma.ui.postMessage({
-      type: "init-settings",
-      settings: {
-        serverPort: state.serverPort,
-      },
-    });
   } catch (error) {
-    console.error("Error loading settings:", error);
+    console.error("Error loading server port:", error);
   }
+
+  let savedChannelSettings = {};
+  try {
+    const savedChannelData = figma.root.getPluginData(CHANNEL_SETTINGS_KEY);
+    const parsedSettings = JSON.parse(savedChannelData || "{}");
+    if (parsedSettings && typeof parsedSettings === "object") {
+      savedChannelSettings = parsedSettings;
+    }
+  } catch (error) {
+    console.error("Error loading channel settings:", error);
+  }
+
+  const channel =
+    typeof savedChannelSettings.channel === "string" &&
+    /^WS\d{6}$/.test(savedChannelSettings.channel)
+      ? savedChannelSettings.channel
+      : "WS668888";
+  const usedNumbers = Array.isArray(savedChannelSettings.usedNumbers)
+    ? savedChannelSettings.usedNumbers.filter(
+        (number) => typeof number === "string" && /^\d{6}$/.test(number)
+      )
+    : [];
+  usedNumbers.push(channel.slice(2));
+
+  // Send initial settings to UI
+  figma.ui.postMessage({
+    type: "init-settings",
+    settings: {
+      serverPort: state.serverPort,
+      channel,
+      usedNumbers: [...new Set(usedNumbers)],
+    },
+  });
 })();
 
 function uniqBy(arr, predicate) {

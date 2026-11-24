@@ -1,332 +1,312 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>WS Figma MCP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>XiiSANS — WebSocket MCP</title>
     <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-muted: #f6f6f6;
+        --border: rgba(17, 17, 17, 0.05);
+        --card-border: rgba(17, 17, 17, 0.1);
+        --text: #111111;
+        --muted: rgba(17, 17, 17, 0.4);
+        --icon: rgba(17, 17, 17, 0.3);
+        --primary: #3e52ff;
+        --primary-soft: rgba(62, 128, 252, 0.1);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #2c2c2c;
+          --surface: #2c2c2c;
+          --surface-muted: #333333;
+          --border: rgba(255, 255, 255, 0.05);
+          --card-border: rgba(255, 255, 255, 0.1);
+          --text: #ffffff;
+          --muted: rgba(255, 255, 255, 0.4);
+          --icon: rgba(255, 255, 255, 0.3);
+          --primary: #2f46ff;
+          --primary-soft: rgba(62, 128, 252, 0.18);
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
         margin: 0;
-        padding: 20px;
-        color: #e0e0e0;
-        background-color: #1e1e1e;
+        padding: 20px 20px 16px;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
       }
-
-      .container {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-      }
-
-      h1 {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: #ffffff;
-      }
-
-      h2 {
-        font-size: 14px;
-        font-weight: 600;
-        margin-top: 20px;
-        margin-bottom: 8px;
-        color: #ffffff;
-      }
-
-      button {
-        background-color: #18a0fb;
-        border: none;
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        margin-top: 8px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background-color 0.2s;
-      }
-
-      button:hover {
-        background-color: #0d8ee0;
-      }
-
-      button.secondary {
-        background-color: #3d3d3d;
-        color: #e0e0e0;
-      }
-
-      button.secondary:hover {
-        background-color: #4d4d4d;
-      }
-
-      button:disabled {
-        background-color: #333333;
-        color: #666666;
-        cursor: not-allowed;
-      }
-
-      input {
-        border: 1px solid #444444;
-        border-radius: 4px;
-        padding: 8px;
-        margin-bottom: 12px;
-        font-size: 14px;
-        width: 100%;
-        box-sizing: border-box;
-        background-color: #2d2d2d;
-        color: #e0e0e0;
-      }
-
-      label {
-        display: block;
-        margin-bottom: 4px;
-        font-size: 12px;
-        font-weight: 500;
-        color: #cccccc;
-      }
-
-      .status {
-        margin-top: 16px;
-        padding: 12px;
-        border-radius: 6px;
-        font-size: 14px;
-      }
-
-      .status.connected {
-        background-color: #1a472a;
-        color: #4ade80;
-      }
-
-      .status.disconnected {
-        background-color: #471a1a;
-        color: #ff9999;
-      }
-
-      .status.info {
-        background-color: #1a3147;
-        color: #66b3ff;
-      }
-
-      .toggle-container {
-        display: flex;
-        align-items: center;
-        margin-bottom: 12px;
-      }
-
-      .toggle-switch {
+      button, input { font: inherit; }
+      button { border: 0; cursor: pointer; }
+      button:disabled { cursor: default; opacity: 0.65; }
+      .app { width: 320px; margin: 0 auto; }
+      .locale-switch {
         position: relative;
-        display: inline-block;
-        width: 40px;
-        height: 20px;
-        margin-right: 8px;
+        display: flex;
+        gap: 2px;
+        width: 70px;
+        height: 24px;
+        padding: 2px;
+        margin: 0 auto 20px;
+        border-radius: 4px;
+        background: var(--surface-muted);
       }
-
-      .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-        margin: 0;
-      }
-
-      .toggle-slider {
+      .locale-switch::before {
         position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #444444;
-        transition: 0.4s;
-        border-radius: 20px;
-      }
-
-      .toggle-slider:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
+        top: 2px;
         left: 2px;
-        bottom: 2px;
-        background-color: white;
-        transition: 0.4s;
-        border-radius: 50%;
+        width: 32px;
+        height: 20px;
+        border-radius: 2px;
+        background: var(--surface);
+        content: "";
+        transition: transform 180ms ease;
       }
-
-      input:checked + .toggle-slider {
-        background-color: #18a0fb;
+      .locale-switch.is-cn::before { transform: translateX(34px); }
+      .locale-button {
+        position: relative;
+        width: 32px;
+        height: 20px;
+        padding: 0;
+        border-radius: 2px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 20px;
       }
-
-      input:checked + .toggle-slider:before {
-        transform: translateX(20px);
+      .locale-button.active {
+        color: var(--text);
       }
-
-      .section {
-        margin-bottom: 24px;
+      @media (prefers-reduced-motion: reduce) {
+        .locale-switch::before { transition: none; }
       }
-
-      .hidden {
-        display: none;
+      .channel-card, .copy-card {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--surface);
       }
-
-      .logo {
-        width: 50px;
-        height: 50px;
+      .channel-card {
+        height: 132px;
+        padding: 22px 16px 16px;
+        border-color: var(--card-border);
+        text-align: center;
       }
-
-      .header {
+      .channel-label {
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 12px;
+      }
+      .channel-value {
         display: flex;
         align-items: center;
-        margin-bottom: 16px;
-      }
-
-      .header-text {
-        margin-left: 12px;
-      }
-
-      .header-text h1 {
-        margin: 0;
-        font-size: 16px;
-      }
-
-      .header-text p {
-        margin: 4px 0 0 0;
-        font-size: 12px;
-        color: #999999;
-      }
-
-      .tabs {
-        display: flex;
-        border-bottom: 1px solid #444444;
-        margin-bottom: 16px;
-      }
-
-      .tab {
-        padding: 8px 16px;
-        cursor: pointer;
-        font-size: 14px;
+        justify-content: center;
+        height: 40px;
+        color: var(--text);
+        font-size: 24px;
         font-weight: 500;
-        color: #999999;
+        line-height: 24px;
+        letter-spacing: -1px;
       }
-
-      .tab.active {
-        border-bottom: 2px solid #18a0fb;
-        color: #18a0fb;
+      .channel-prefix { margin-right: 8px; }
+      .channel-number {
+        width: 94px;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        line-height: inherit;
+        letter-spacing: inherit;
+        text-align: left;
       }
-
-      .tab-content {
-        display: none;
+      .channel-number:disabled { opacity: 1; }
+      .channel-actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        width: 49px;
+        height: 20px;
+        margin: 8px auto 0;
       }
-
-      .tab-content.active {
+      .icon-button {
+        position: relative;
+        flex: 0 0 12px;
+        width: 12px;
+        height: 12px;
+        padding: 0;
+        background: transparent;
+        color: var(--icon);
+      }
+      .icon-button::before {
+        position: absolute;
+        inset: -6px;
+        content: "";
+      }
+      .icon-button:hover, .icon-button:focus-visible { color: var(--text); }
+      .icon-separator {
+        flex: 0 0 1px;
+        height: 12px;
+        background: var(--border);
+      }
+      .icon-button svg { display: block; width: 12px; height: 12px; }
+      .primary-button, .connected-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        line-height: 14px;
+      }
+      .primary-button {
+        width: 100%;
+        height: 40px;
+        margin-top: 20px;
+        border-radius: 4px;
+        background: var(--primary);
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 400;
+      }
+      .loading-dots {
         display: block;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: -6px 0 currentColor, 6px 0 currentColor;
       }
-
-      .link {
-        color: #18a0fb;
-        text-decoration: none;
-        cursor: pointer;
+      .port {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 12px;
+        text-align: center;
       }
-
-      .link:hover {
-        text-decoration: underline;
+      .connected-view { display: none; }
+      .connected-view.visible { display: block; }
+      .disconnected-view.hidden { display: none; }
+      .copy-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-height: 64px;
+        margin-bottom: 8px;
+        padding: 12px 56px 12px 16px;
+        border-color: var(--card-border);
       }
-
-      .header-logo {
-        padding: 16px;
-        border-radius: 16px;
-        background-color: #333;
+      .copy-label {
+        flex: 0 0 58px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 18px;
       }
-
-      .header-logo-image {
+      .copy-value {
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+        word-break: break-word;
+      }
+      .copy-button {
+        position: absolute;
+        top: 50%;
+        right: 16px;
+        display: grid;
         width: 24px;
         height: 24px;
-        object-fit: contain;
+        padding: 0;
+        place-items: center;
+        transform: translateY(-50%);
+        border-radius: 2px;
+        background: var(--primary);
+        color: #ffffff;
       }
-      /* Progress styles */
-      .operation-complete {
-        color: #4ade80;
+      .copy-button svg { display: block; width: 12px; height: 12px; }
+      .connected-button {
+        width: 100%;
+        height: 40px;
+        margin-top: 16px;
+        border-radius: 4px;
+        background: var(--primary-soft);
+        color: var(--primary);
+        font-size: 14px;
+        font-weight: 500;
       }
-      .operation-error {
-        color: #ff9999;
-      }
+      .progress-container { display: none; }
     </style>
   </head>
-
   <body>
-    <div class="container">
-      <div id="content-connection" class="tab-content active">
-        <div id="connection-status" class="status disconnected">
-          Not connected to Cursor MCP server
-        </div>
-
-        <div class="section">
-          <button id="btn-connect" class="primary" style="width: 100%">
-            Connect
-          </button>
-        </div>
-
-        <input type="hidden" id="port" value="3055" />
-        <div
-          id="port-display"
-          style="
-            text-align: center;
-            color: #888;
-            font-size: 12px;
-            margin-top: 12px;
-          "
-        >
-          WebSocket Server Port: 3055
-        </div>
-
-        <!-- Add Progress Bar Section -->
-        <div id="progress-container" class="section hidden">
-          <h2>Operation Progress</h2>
-          <div id="progress-message">No operation in progress</div>
-          <div
-            style="
-              width: 100%;
-              background-color: #444;
-              border-radius: 4px;
-              margin-top: 8px;
-            "
-          >
-            <div
-              id="progress-bar"
-              style="
-                width: 0%;
-                height: 8px;
-                background-color: #18a0fb;
-                border-radius: 4px;
-                transition: width 0.3s;
-              "
-            ></div>
-          </div>
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              margin-top: 4px;
-              font-size: 12px;
-            "
-          >
-            <div id="progress-status">Not started</div>
-            <div id="progress-percentage">0%</div>
-          </div>
-        </div>
+    <main class="app">
+      <div class="locale-switch" role="group" aria-label="Language">
+        <button id="locale-en" class="locale-button active" type="button">EN</button>
+        <button id="locale-cn" class="locale-button" type="button">CN</button>
       </div>
 
-    </div>
+      <section id="disconnected-view" class="disconnected-view">
+        <div class="channel-card">
+          <div id="channel-label" class="channel-label">CHANNEL</div>
+          <div class="channel-value">
+            <span class="channel-prefix">WS</span>
+            <input id="channel-number" class="channel-number" value="668888" inputmode="numeric" maxlength="6" aria-label="Channel number" />
+          </div>
+          <div class="channel-actions">
+            <button id="refresh-channel" class="icon-button" type="button" aria-label="Refresh channel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 0 0-14.5-4.9L3 8"/><path d="M3 3v5h5"/><path d="M4 13a8.1 8.1 0 0 0 14.5 4.9L21 16"/><path d="M21 21v-5h-5"/></svg>
+            </button>
+            <span class="icon-separator" aria-hidden="true"></span>
+            <button id="edit-channel" class="icon-button" type="button" aria-label="Edit channel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+            </button>
+          </div>
+        </div>
+        <button id="btn-connect" class="primary-button" type="button">Connect</button>
+      </section>
+
+      <section id="connected-view" class="connected-view">
+        <div class="copy-card">
+          <div id="copy-channel-label" class="copy-label">Channel</div>
+          <div id="copy-channel-value" class="copy-value"></div>
+          <button id="copy-channel" class="copy-button" type="button" aria-label="Copy channel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+          </button>
+        </div>
+        <div class="copy-card">
+          <div id="copy-ai-label" class="copy-label">AI Chat</div>
+          <div id="copy-ai-value" class="copy-value"></div>
+          <button id="copy-ai" class="copy-button" type="button" aria-label="Copy AI prompt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+          </button>
+        </div>
+        <button id="btn-disconnect" class="connected-button" type="button">Connected</button>
+      </section>
+
+      <div class="port">WebSocket Server Port: <span id="port-value">3055</span></div>
+      <div id="progress-container" class="progress-container"><div id="progress-message"></div><div id="progress-status"></div><div id="progress-percentage"></div></div>
+    </main>
 
     <script>
-      // WebSocket connection state
       const state = {
         connected: false,
         socket: null,
         serverPort: 3055,
         pendingRequests: new Map(),
-        channel: null,
         commandTracking: new Map(),
+        channel: "WS668888",
+        locale: "en",
+        usedNumbers: new Set(["668888"]),
+        activeRequestId: null,
       };
 
       // --- Anonymous analytics (GA4 Measurement Protocol) ---
@@ -401,433 +381,268 @@
       })();
       analytics.track("plugin_open");
 
-      // UI Elements
-      const portInput = document.getElementById("port");
-      const connectButton = document.getElementById("btn-connect");
-      const connectionStatus = document.getElementById("connection-status");
+      const copy = {
+        en: {
+          title: "CHANNEL",
+          channel: "Channel",
+          aiChat: "AI Chat",
+          connect: "Connect",
+          connecting: "Connecting",
+          connected: "Connected",
+          disconnect: "Disconnect",
+          copied: "Copied Successfully, Go to AI Chat",
+          prompt: (channel) => `join_channel: ${channel}, Show File Name of Current Channel`,
+        },
+        cn: {
+          title: "频道码",
+          channel: "频道码",
+          aiChat: "加入AI",
+          connect: "连接",
+          connecting: "连接中",
+          connected: "已连接",
+          disconnect: "断开连接",
+          copied: "复制成功，快去AI对话",
+          prompt: (channel) => `join_channel: ${channel}, 告诉我当前频道的文件名称`,
+        },
+      };
 
-      // Tabs
-      const tabs = document.querySelectorAll(".tab");
-      const tabContents = document.querySelectorAll(".tab-content");
+      const $ = (id) => document.getElementById(id);
+      const channelNumber = $("channel-number");
+      const connectButton = $("btn-connect");
+      const disconnectButton = $("btn-disconnect");
+      const disconnectedView = $("disconnected-view");
+      const connectedView = $("connected-view");
+      const copyChannelValue = $("copy-channel-value");
+      const copyAiValue = $("copy-ai-value");
 
-      // Add UI elements for progress tracking
-      const progressContainer = document.getElementById("progress-container");
-      const progressBar = document.getElementById("progress-bar");
-      const progressMessage = document.getElementById("progress-message");
-      const progressStatus = document.getElementById("progress-status");
-      const progressPercentage = document.getElementById("progress-percentage");
+      function postPluginMessage(message) {
+        parent.postMessage({ pluginMessage: message }, "*");
+      }
 
-      // Initialize UI
-      function updateConnectionStatus(isConnected, message) {
+      function currentChannel() {
+        return "WS" + channelNumber.value;
+      }
+
+      function saveSettings() {
+        if (!/^\d{6}$/.test(channelNumber.value)) return;
+        state.channel = currentChannel();
+        state.usedNumbers.add(channelNumber.value);
+        postPluginMessage({ type: "update-settings", serverPort: state.serverPort, channel: state.channel, usedNumbers: Array.from(state.usedNumbers) });
+      }
+
+      function renderLocale() {
+        const language = copy[state.locale];
+        document.querySelector(".locale-switch").classList.toggle("is-cn", state.locale === "cn");
+        $("locale-en").classList.toggle("active", state.locale === "en");
+        $("locale-cn").classList.toggle("active", state.locale === "cn");
+        $("locale-en").setAttribute("aria-pressed", state.locale === "en");
+        $("locale-cn").setAttribute("aria-pressed", state.locale === "cn");
+        $("channel-label").textContent = language.title;
+        $("copy-channel-label").textContent = language.channel;
+        $("copy-ai-label").textContent = language.aiChat;
+        connectButton.textContent = language.connect;
+        disconnectButton.textContent = language.connected;
+        renderConnectedContent();
+      }
+
+      function renderConnectedContent() {
+        copyChannelValue.textContent = state.channel;
+        copyAiValue.textContent = copy[state.locale].prompt(state.channel);
+      }
+
+      function showConnected(isConnected) {
         state.connected = isConnected;
-
-        let statusMessage =
-          message ||
-          (isConnected
-            ? "Connected to Cursor MCP server"
-            : "Not connected to Cursor MCP server");
-
-        // Add instructions for localhost when disconnected
-        if (!isConnected) {
-          statusMessage += `<br><br>Run this in your terminal, then connect<br><code>bunx cursor-talk-to-figma-socket</code>`;
-        }
-
-        connectionStatus.innerHTML = statusMessage;
-        connectionStatus.className = `status ${
-          isConnected ? "connected" : "disconnected"
-        }`;
-
-        // Update connect button text and style based on connection state
-        connectButton.textContent = isConnected ? "Disconnect" : "Connect";
-        connectButton.className = isConnected ? "secondary" : "primary";
-        portInput.disabled = isConnected;
+        connectButton.disabled = isConnected || channelNumber.value.length !== 6;
+        disconnectedView.classList.toggle("hidden", isConnected);
+        connectedView.classList.toggle("visible", isConnected);
+        channelNumber.disabled = isConnected;
+        renderLocale();
       }
 
-      // Connect to WebSocket server
-      async function connectToServer(port) {
+      function generateChannelNumber() {
+        if (state.usedNumbers.size >= 1000000) return channelNumber.value;
+        let value;
+        do {
+          value = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+        } while (state.usedNumbers.has(value));
+        state.usedNumbers.add(value);
+        return value;
+      }
+
+      function setChannel(channel) {
+        const match = /^WS(\d{6})$/.exec(String(channel || ""));
+        channelNumber.value = match ? match[1] : "668888";
+        state.channel = currentChannel();
+        connectButton.disabled = false;
+        renderConnectedContent();
+      }
+
+      function updateConnectionStatus(isConnected) {
+        showConnected(isConnected);
+      }
+
+      function connectToServer() {
+        if (state.connected || state.socket || !/^\d{6}$/.test(channelNumber.value)) return;
+        state.channel = currentChannel();
+        saveSettings();
+        connectButton.disabled = true;
+        const loadingDots = document.createElement("span");
+        loadingDots.className = "loading-dots";
+        loadingDots.setAttribute("role", "status");
+        loadingDots.setAttribute("aria-label", copy[state.locale].connecting);
+        connectButton.replaceChildren(loadingDots);
         try {
-          if (state.connected && state.socket) {
-            updateConnectionStatus(true, "Already connected to server");
-            return;
-          }
-
-          state.serverPort = port;
-          const wsUrl = `ws://localhost:${port}`;
-
-          state.socket = new WebSocket(wsUrl);
-
-          state.socket.onopen = () => {
-            // Generate random channel name
-            const channelName = generateChannelName();
-            console.log("Joining channel:", channelName);
-            state.channel = channelName;
-
-            // Join the channel using the same format as App.tsx
-            state.socket.send(
-              JSON.stringify({
-                type: "join",
-                channel: channelName.trim(),
-              })
-            );
-          };
-
-          state.socket.onmessage = (event) => {
-            try {
-              const data = JSON.parse(event.data);
-              console.log("Received message:", data);
-
-              if (data.type === "system") {
-                // Successfully joined channel
-                if (data.message && data.message.result) {
-                  state.connected = true;
-                  const channelName = data.channel;
-                  updateConnectionStatus(
-                    true,
-                    `Connected to server in channel: <strong>${channelName}</strong>`
-                  );
-                  analytics.track("channel_join", {
-                    port: state.serverPort,
-                    channel: channelName,
-                  });
-
-                  // Notify the plugin code
-                  parent.postMessage(
-                    {
-                      pluginMessage: {
-                        type: "notify",
-                        message: `Connected to Cursor MCP server on port ${port} in channel: ${channelName}`,
-                      },
-                    },
-                    "*"
-                  );
-                }
-              } else if (data.type === "error") {
-                console.error("Error:", data.message);
-                updateConnectionStatus(false, `Error: ${data.message}`);
-                state.socket.close();
-              }
-
-              handleSocketMessage(data);
-            } catch (error) {
-              console.error("Error parsing message:", error);
-            }
-          };
-
-          state.socket.onclose = () => {
-            state.connected = false;
-            state.socket = null;
-            updateConnectionStatus(false, "Disconnected from server");
-          };
-
-          state.socket.onerror = (error) => {
-            console.error("WebSocket error:", error);
-            updateConnectionStatus(false, "Connection error");
-            state.connected = false;
-            state.socket = null;
-          };
+          state.socket = new WebSocket(`ws://localhost:${state.serverPort}`);
         } catch (error) {
-          console.error("Connection error:", error);
-          updateConnectionStatus(
-            false,
-            `Connection error: ${error.message || "Unknown error"}`
-          );
-        }
-      }
-
-      // Disconnect from websocket server
-      function disconnectFromServer() {
-        if (state.socket) {
-          state.socket.close();
-          state.socket = null;
-          state.connected = false;
-          updateConnectionStatus(false, "Disconnected from server");
-        }
-      }
-
-      // Handle messages from the WebSocket
-      async function handleSocketMessage(payload) {
-        const data = payload.message;
-        console.log("handleSocketMessage", data);
-
-        // If it's a response to a previous request
-        if (data.id && state.pendingRequests.has(data.id)) {
-          const { resolve, reject } = state.pendingRequests.get(data.id);
-          state.pendingRequests.delete(data.id);
-
-          if (data.error) {
-            reject(new Error(data.error));
-          } else {
-            resolve(data.result);
-          }
+          console.error("Connection error", error);
+          updateConnectionStatus(false);
           return;
         }
-
-        // If it's a new command
-        if (data.command) {
+        state.socket.onopen = () => {
+          state.socket.send(JSON.stringify({ type: "join", channel: state.channel }));
+        };
+        state.socket.onmessage = (event) => {
           try {
-            state.activeRequestId = data.id;
-            state.commandTracking.set(data.id, {
-              command: data.command,
-              startedAt: Date.now(),
-            });
-
-            // Send the command to the plugin code
-            parent.postMessage(
-              {
-                pluginMessage: {
-                  type: "execute-command",
-                  id: data.id,
-                  command: data.command,
-                  params: data.params,
-                },
-              },
-              "*"
-            );
+            const data = JSON.parse(event.data);
+            if (data.type === "system" && data.message && data.message.result) {
+              state.channel = data.channel || state.channel;
+              renderConnectedContent();
+              updateConnectionStatus(true);
+              analytics.track("channel_join", { port: state.serverPort, channel: state.channel });
+              postPluginMessage({ type: "notify", message: `Connected to Cursor MCP server in channel: ${state.channel}` });
+            } else if (data.type === "error") {
+              state.socket.close();
+            }
+            handleSocketMessage(data);
           } catch (error) {
-            // Send error back to WebSocket
-            sendErrorResponse(
-              data.id,
-              error.message || "Error executing command"
-            );
+            console.error("Error parsing WebSocket message", error);
           }
+        };
+        state.socket.onclose = () => {
+          state.socket = null;
+          updateConnectionStatus(false);
+        };
+        state.socket.onerror = () => {
+          state.socket = null;
+          updateConnectionStatus(false);
+        };
+      }
+
+      function disconnectFromServer() {
+        if (state.socket) state.socket.close();
+        state.socket = null;
+        updateConnectionStatus(false);
+      }
+
+      async function handleSocketMessage(payload) {
+        const data = payload.message || {};
+        if (data.id && state.pendingRequests.has(data.id)) {
+          const request = state.pendingRequests.get(data.id);
+          state.pendingRequests.delete(data.id);
+          data.error ? request.reject(new Error(data.error)) : request.resolve(data.result);
+          return;
         }
+        if (data.command) {
+          state.activeRequestId = data.id;
+          state.commandTracking.set(data.id, { command: data.command, startedAt: Date.now() });
+          postPluginMessage({ type: "execute-command", id: data.id, command: data.command, params: data.params });
+        }
+      }
+
+      function sendSuccessResponse(id, result) {
+        if (!state.socket) return;
+        state.socket.send(JSON.stringify({ id, type: "message", channel: state.channel, message: { id, result } }));
+      }
+
+      function sendErrorResponse(id, error) {
+        if (!state.socket) return;
+        state.socket.send(JSON.stringify({ id, type: "message", channel: state.channel, message: { id, error, result: {} } }));
+      }
+
+      function sendProgressUpdateToServer(progressData) {
+        if (!state.socket) return;
+        const id = state.activeRequestId || progressData.commandId;
+        state.socket.send(JSON.stringify({ id, type: "progress_update", channel: state.channel, message: { id, type: "progress_update", data: progressData } }));
       }
 
       function trackCommandResult(id, success, errorMessage) {
         const meta = state.commandTracking.get(id);
         if (!meta) return;
         state.commandTracking.delete(id);
-        const params = {
-          command_name: String(meta.command || "unknown"),
-          success: success ? 1 : 0,
-          duration_ms: Date.now() - meta.startedAt,
-        };
-        if (!success && errorMessage) {
-          params.error_message = String(errorMessage).slice(0, 100);
-        }
-        analytics.track("command_executed", params);
+        analytics.track("command_executed", { command_name: String(meta.command), success: success ? 1 : 0, duration_ms: Date.now() - meta.startedAt, error_message: errorMessage || "" });
       }
 
-      // Send a command to the WebSocket server
-      async function sendCommand(command, params) {
-        return new Promise((resolve, reject) => {
-          if (!state.connected || !state.socket) {
-            reject(new Error("Not connected to server"));
-            return;
-          }
-
-          const id = generateId();
-          state.pendingRequests.set(id, { resolve, reject });
-
-          state.socket.send(
-            JSON.stringify({
-              id,
-              type: "message",
-              channel: state.channel,
-              message: {
-                id,
-                command,
-                params,
-              },
-            })
-          );
-
-          // Set timeout to reject the promise after 30 seconds
-          setTimeout(() => {
-            if (state.pendingRequests.has(id)) {
-              state.pendingRequests.delete(id);
-              reject(new Error("Request timed out"));
-            }
-          }, 30000);
-        });
-      }
-
-      // Send success response back to WebSocket
-      function sendSuccessResponse(id, result) {
-        if (!state.connected || !state.socket) {
-          console.error("Cannot send response: socket not connected");
-          return;
-        }
-
-        state.socket.send(
-          JSON.stringify({
-            id,
-            type: "message",
-            channel: state.channel,
-            message: {
-              id,
-              result,
-            },
-          })
-        );
-      }
-
-      // Send error response back to WebSocket
-      function sendErrorResponse(id, errorMessage) {
-        if (!state.connected || !state.socket) {
-          console.error("Cannot send error response: socket not connected");
-          return;
-        }
-
-        state.socket.send(
-          JSON.stringify({
-            id,
-            type: "message",
-            channel: state.channel,
-            message: {
-              id,
-              error: errorMessage,
-              result: {},
-            },
-          })
-        );
-      }
-
-      // Helper to generate unique IDs
       function generateId() {
-        return (
-          Date.now().toString(36) + Math.random().toString(36).substr(2, 5)
-        );
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
       }
 
-      // Add this function after the generateId() function
-      function generateChannelName() {
-        const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
-        let result = "";
-        for (let i = 0; i < 8; i++) {
-          result += characters.charAt(
-            Math.floor(Math.random() * characters.length)
-          );
+      async function copyText(text) {
+        const fallback = () => {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          const copied = document.execCommand("copy");
+          textarea.remove();
+          if (!copied) throw new Error("Clipboard copy failed");
+        };
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            try { await navigator.clipboard.writeText(text); } catch (error) { fallback(); }
+          } else fallback();
+          postPluginMessage({ type: "notify", message: copy[state.locale].copied });
+        } catch (error) {
+          console.error("Clipboard copy failed", error);
         }
-        return result;
       }
 
-      // Tab switching
-      tabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-          tabs.forEach((t) => t.classList.remove("active"));
-          tabContents.forEach((c) => c.classList.remove("active"));
-
-          tab.classList.add("active");
-          const contentId = "content-" + tab.id.split("-")[1];
-          document.getElementById(contentId).classList.add("active");
-        });
+      $("locale-en").addEventListener("click", () => { state.locale = "en"; renderLocale(); });
+      $("locale-cn").addEventListener("click", () => { state.locale = "cn"; renderLocale(); });
+      channelNumber.addEventListener("input", () => {
+        channelNumber.value = channelNumber.value.replace(/\D/g, "").slice(0, 6);
+        connectButton.disabled = channelNumber.value.length !== 6;
+        if (channelNumber.value.length === 6) saveSettings();
       });
-
-      // Replace the separate connect/disconnect button listeners with a single toggle
-      connectButton.addEventListener("click", () => {
-        if (state.connected) {
-          updateConnectionStatus(false, "Disconnecting...");
-          connectionStatus.className = "status info";
-          disconnectFromServer();
-        } else {
-          const port = parseInt(portInput.value, 10) || 3055;
-          updateConnectionStatus(false, "Connecting...");
-          connectionStatus.className = "status info";
-          connectToServer(port);
-        }
+      channelNumber.addEventListener("blur", () => {
+        if (channelNumber.value.length !== 6) setChannel(state.channel);
       });
+      $("refresh-channel").addEventListener("click", () => {
+        channelNumber.value = generateChannelNumber();
+        saveSettings();
+      });
+      $("edit-channel").addEventListener("click", () => {
+        channelNumber.focus();
+        channelNumber.select();
+      });
+      connectButton.addEventListener("click", connectToServer);
+      disconnectButton.addEventListener("click", disconnectFromServer);
+      disconnectButton.addEventListener("mouseenter", () => { disconnectButton.textContent = copy[state.locale].disconnect; });
+      disconnectButton.addEventListener("mouseleave", () => { disconnectButton.textContent = copy[state.locale].connected; });
+      $("copy-channel").addEventListener("click", () => copyText(state.channel));
+      $("copy-ai").addEventListener("click", () => copyText(copy[state.locale].prompt(state.channel)));
 
-      // Function to update progress UI
-      function updateProgressUI(progressData) {
-        // Show progress container if hidden
-        progressContainer.classList.remove("hidden");
-
-        // Update progress bar
-        const progress = progressData.progress || 0;
-        progressBar.style.width = `${progress}%`;
-        progressPercentage.textContent = `${progress}%`;
-
-        // Update message
-        progressMessage.textContent =
-          progressData.message || "Operation in progress";
-
-        // Update status text based on operation state
-        if (progressData.status === "started") {
-          progressStatus.textContent = "Started";
-          progressStatus.className = "";
-        } else if (progressData.status === "in_progress") {
-          progressStatus.textContent = "In Progress";
-          progressStatus.className = "";
-        } else if (progressData.status === "completed") {
-          progressStatus.textContent = "Completed";
-          progressStatus.className = "operation-complete";
-
-          // Hide progress container after 5 seconds
-          setTimeout(() => {
-            progressContainer.classList.add("hidden");
-          }, 5000);
-        } else if (progressData.status === "error") {
-          progressStatus.textContent = "Error";
-          progressStatus.className = "operation-error";
-        }
-      }
-
-      // Send operation progress update to server
-      function sendProgressUpdateToServer(progressData) {
-        if (!state.connected || !state.socket) {
-          console.error("Cannot send progress update: socket not connected");
-          return;
-        }
-
-        console.log("Sending progress update to server:", progressData);
-
-        const requestId = state.activeRequestId || progressData.commandId;
-        state.socket.send(
-          JSON.stringify({
-            id: requestId,
-            type: "progress_update",
-            channel: state.channel,
-            message: {
-              id: requestId,
-              type: "progress_update",
-              data: progressData,
-            },
-          })
-        );
-      }
-
-      // Reset progress UI
-      function resetProgressUI() {
-        progressContainer.classList.add("hidden");
-        progressBar.style.width = "0%";
-        progressMessage.textContent = "No operation in progress";
-        progressStatus.textContent = "Not started";
-        progressStatus.className = "";
-        progressPercentage.textContent = "0%";
-      }
-
-      // Listen for messages from the plugin code
       window.onmessage = (event) => {
         const message = event.data.pluginMessage;
         if (!message) return;
-
-        console.log("Received message from plugin:", message);
-
         switch (message.type) {
-          case "connection-status":
-            updateConnectionStatus(message.connected, message.message);
-            break;
-          case "auto-connect":
-            connectButton.click();
-            break;
-          case "auto-disconnect":
-            connectButton.click();
+          case "init-settings":
+            state.serverPort = message.settings.serverPort || 3055;
+            $("port-value").textContent = state.serverPort;
+            setChannel(message.settings.channel || "WS668888");
+            state.usedNumbers = new Set((message.settings.usedNumbers || []).filter((number) => /^\d{6}$/.test(number)));
+            state.usedNumbers.add(channelNumber.value);
             break;
           case "command-result":
-            // Forward the result from plugin code back to WebSocket
             sendSuccessResponse(message.id, message.result);
             trackCommandResult(message.id, true);
             break;
           case "command-error":
-            // Forward the error from plugin code back to WebSocket
             sendErrorResponse(message.id, message.error);
             trackCommandResult(message.id, false, message.error);
             break;
           case "command_progress":
-            // Update UI with progress information
-            updateProgressUI(message);
-            // Forward progress update to server
             sendProgressUpdateToServer(message);
             break;
           case "analytics-client-id":
@@ -836,6 +651,8 @@
         }
       };
 
+      renderLocale();
+      setChannel("WS668888");
     </script>
   </body>
 </html>
