@@ -391,6 +391,7 @@
           connected: "Connected",
           disconnect: "Disconnect",
           copied: "Copied Successfully, Go to AI Chat",
+          connectFirst: "Start the websocket client first before attempting to connect",
           prompt: (channel) => `join_channel: ${channel}, Show File Name of Current Channel`,
         },
         cn: {
@@ -402,6 +403,7 @@
           connected: "已连接",
           disconnect: "断开连接",
           copied: "复制成功，快去AI对话",
+          connectFirst: "请先开启 WebSocket 客户端，再尝试连接",
           prompt: (channel) => `join_channel: ${channel}, 告诉我当前频道的文件名称`,
         },
       };
@@ -491,14 +493,27 @@
         loadingDots.setAttribute("role", "status");
         loadingDots.setAttribute("aria-label", copy[state.locale].connecting);
         connectButton.replaceChildren(loadingDots);
+        // Track whether the socket ever opened. If it never did and we hit
+        // close/error, the relay server isn't running — surface a native
+        // red Figma toast that stays until the user dismisses it.
+        let everOpened = false;
+        const notifyServerDown = () => {
+          postPluginMessage({
+            type: "notify",
+            message: copy[state.locale].connectFirst,
+            options: { error: true },
+          });
+        };
         try {
           state.socket = new WebSocket(`ws://localhost:${state.serverPort}`);
         } catch (error) {
           console.error("Connection error", error);
           updateConnectionStatus(false);
+          notifyServerDown();
           return;
         }
         state.socket.onopen = () => {
+          everOpened = true;
           state.socket.send(JSON.stringify({ type: "join", channel: state.channel }));
         };
         state.socket.onmessage = (event) => {
@@ -519,10 +534,14 @@
           }
         };
         state.socket.onclose = () => {
+          const failedToConnect = !everOpened;
           state.socket = null;
           updateConnectionStatus(false);
+          if (failedToConnect) notifyServerDown();
         };
         state.socket.onerror = () => {
+          // onerror is followed by onclose; let onclose own the toast so it
+          // isn't shown twice. Just clear state here.
           state.socket = null;
           updateConnectionStatus(false);
         };

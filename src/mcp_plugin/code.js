@@ -83,7 +83,7 @@ figma.ui.onmessage = async (msg) => {
       updateSettings(msg);
       break;
     case "notify":
-      figma.notify(msg.message);
+      figma.notify(msg.message, msg.options || undefined);
       break;
     case "close-plugin":
       figma.closePlugin();
