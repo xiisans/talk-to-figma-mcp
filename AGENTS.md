@@ -4,10 +4,10 @@ This file provides guidance to Claude Code agents (claude.ai/code) when working 
 
 ## Project Overview
 
-MCP (Model Context Protocol) server that bridges AI agents (Cursor, Claude Code) with Figma. Three components communicate in a pipeline:
+MCP (Model Context Protocol) server that bridges AI agents (any MCP-compatible client, such as Claude Code, Cursor, Windsurf, or Cline) with Figma. Three components communicate in a pipeline:
 
 ```
-Claude Code / Cursor ←(stdio)→ MCP Server ←(WebSocket)→ WebSocket Relay ←(WebSocket)→ Figma Plugin
+AI agent (MCP client) ←(stdio)→ MCP Server ←(WebSocket)→ WebSocket Relay ←(WebSocket)→ Figma Plugin
 ```
 
 ## Build & Development Commands
@@ -21,6 +21,8 @@ bun run start            # Run built MCP server
 bun setup                # Full setup (install + write .cursor/mcp.json + .mcp.json)
 ```
 
+`.cursor/mcp.json` is the config path read by Cursor; other MCP clients use their own config file but the same server entry.
+
 There is no test suite or linter configured.
 
 ## Architecture
@@ -31,7 +33,7 @@ The main server implementing the MCP protocol via `@modelcontextprotocol/sdk`. E
 ### WebSocket Relay (`src/socket.ts`)
 Lightweight Bun WebSocket server on port 3055 (configurable via `PORT` env). Routes messages between MCP server and Figma plugin using channel-based isolation. Clients call `join` to enter a channel; messages broadcast only within the same channel.
 
-### Figma Plugin (`src/cursor_mcp_plugin/`)
+### Figma Plugin (`src/mcp_plugin/`)
 Runs inside Figma. `code.js` is the plugin main thread handling 30+ commands via a dispatcher. `ui.html` is the plugin UI for WebSocket connection management. `manifest.json` declares permissions (dynamic-page access, localhost network). The plugin is **not built/bundled** — `code.js` is written directly as the runtime artifact.
 
 ## Key Patterns
@@ -45,10 +47,10 @@ Runs inside Figma. `code.js` is the plugin main thread handling 30+ commands via
 
 ## Setup
 
-1. Run `bun setup` — installs dependencies and writes MCP config for both Cursor (`.cursor/mcp.json`) and Claude Code (`.mcp.json`)
+1. Run `bun setup` — installs dependencies and writes MCP config to `.cursor/mcp.json` (read by Cursor) and `.mcp.json` (read by Claude Code); other MCP clients use their own config file
 2. `bun socket` in one terminal (WebSocket relay on port 3055)
-3. In Figma: Plugins → Development → Link existing plugin → select `src/cursor_mcp_plugin/manifest.json`
-4. Run plugin in Figma, join a channel, then use tools from Cursor or Claude Code
+3. In Figma: Plugins → Development → Link existing plugin → select `src/mcp_plugin/manifest.json`
+4. Run plugin in Figma, join a channel, then use tools from your AI client
 
 The MCP config written by `bun setup` uses the published package:
 
@@ -57,7 +59,7 @@ The MCP config written by `bun setup` uses the published package:
   "mcpServers": {
     "TalkToFigma": {
       "command": "bunx",
-      "args": ["cursor-talk-to-figma-mcp@latest"]
+      "args": ["talk-to-figma-mcp@latest"]
     }
   }
 }
@@ -66,7 +68,7 @@ The MCP config written by `bun setup` uses the published package:
 You can also add it manually for Claude Code via the CLI:
 
 ```bash
-claude mcp add TalkToFigma -- bunx cursor-talk-to-figma-mcp@latest
+claude mcp add TalkToFigma -- bunx talk-to-figma-mcp@latest
 ```
 
 ## Agent Notes

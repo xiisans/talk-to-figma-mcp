@@ -5,7 +5,7 @@ MCP_CONFIG='{
     "TalkToFigma": {
       "command": "bunx",
       "args": [
-        "cursor-talk-to-figma-mcp@latest"
+        "talk-to-figma-mcp@latest"
       ]
     }
   }
@@ -13,10 +13,10 @@ MCP_CONFIG='{
 
 bun install
 
-# Cursor: write .cursor/mcp.json
+# IDE that reads .cursor/mcp.json
 mkdir -p .cursor
 echo "$MCP_CONFIG" > .cursor/mcp.json
-echo "✓ Cursor MCP config written to .cursor/mcp.json"
+echo "✓ MCP config written to .cursor/mcp.json"
 
 # Claude Code: write .mcp.json in project root
 echo "$MCP_CONFIG" > .mcp.json
