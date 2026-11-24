@@ -411,6 +411,7 @@
           disconnect: "Disconnect",
           copied: "Copied Successfully, Go to AI Chat",
           connectFirst: "Start the websocket client first before attempting to connect",
+          connectedToast: (channel) => `Connected to WebSocket server in channel: ${channel}`,
           prompt: (channel) => `join_channel: ${channel}, Show File Name of Current Channel`,
         },
         cn: {
@@ -423,6 +424,7 @@
           disconnect: "断开连接",
           copied: "复制成功，快去AI对话",
           connectFirst: "请先开启 WebSocket 客户端，再尝试连接",
+          connectedToast: (channel) => `已成功连接到 WebSocket 服务器，频道码为：${channel}`,
           prompt: (channel) => `join_channel: ${channel}, 告诉我当前频道的文件名称`,
         },
       };
@@ -543,7 +545,7 @@
               renderConnectedContent();
               updateConnectionStatus(true);
               analytics.track("channel_join", { port: state.serverPort, channel: state.channel });
-              postPluginMessage({ type: "notify", message: `Connected to Cursor MCP server in channel: ${state.channel}` });
+              postPluginMessage({ type: "notify", message: copy[state.locale].connectedToast(state.channel) });
             } else if (data.type === "error") {
               state.socket.close();
             }
