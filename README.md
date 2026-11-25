@@ -1,6 +1,6 @@
 # Talk to Figma MCP
 
-This project implements a Model Context Protocol (MCP) integration between AI agents (any MCP-compatible client, such as Claude Code, Cursor, Windsurf, or Cline) and Figma, allowing AI agents to communicate with Figma for reading designs and modifying them programmatically.
+This project implements a Model Context Protocol (MCP) integration between AI agents (any MCP-compatible client, such as Claude Code, Codex, Cursor, Windsurf, or Cline) and Figma, allowing AI agents to communicate with Figma for reading designs and modifying them programmatically.
 
 https://github.com/user-attachments/assets/129a14d2-ed73-470f-9a4c-2240b2a4885c
 

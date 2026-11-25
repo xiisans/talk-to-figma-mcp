@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Claude Code agents (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents (Claude Code, Codex, Cursor, Windsurf, Cline, or any MCP-capable client) when working with code in this repository. Hand this file to any such agent and ask it to set the project up or help with a change.
 
 ## Project Overview
 
@@ -45,14 +45,19 @@ Runs inside Figma. `code.js` is the plugin main thread handling 30+ commands via
 - **Reconnection**: WebSocket auto-reconnects after 2 seconds on disconnect.
 - **Zod validation**: All tool parameters are validated with Zod schemas.
 
-## Setup
+## Setup & Onboarding (for AI agents)
 
-1. Run `bun setup` — installs dependencies and writes MCP config to `.cursor/mcp.json` (read by Cursor) and `.mcp.json` (read by Claude Code); other MCP clients use their own config file
-2. `bun socket` in one terminal (WebSocket relay on port 3055)
-3. In Figma: Plugins → Development → Link existing plugin → select `src/mcp_plugin/manifest.json`
-4. Run plugin in Figma, join a channel, then use tools from your AI client
+Prerequisites: **Bun** (required — runs the server and the relay) and **Git**. Node.js is optional. Install Bun with Homebrew (`brew install bun`) when admin access and Homebrew are available, otherwise run `curl -fsSL https://bun.sh/install | bash` (writes to the home dir, no admin needed). Verify with `bun --version`.
 
-The MCP config written by `bun setup` uses the published package:
+Quick setup, from the project root:
+
+```bash
+bun install      # install dependencies
+bun run build    # build the MCP server
+bun setup        # writes MCP config to .cursor/mcp.json and .mcp.json
+```
+
+`bun setup` writes `.cursor/mcp.json` (read by Cursor) and `.mcp.json` (read by Claude Code). For any other client, copy the same server entry into that client's MCP config file. The config uses the published package:
 
 ```json
 {
@@ -70,6 +75,20 @@ You can also add it manually for Claude Code via the CLI:
 ```bash
 claude mcp add TalkToFigma -- bunx talk-to-figma-mcp@latest
 ```
+
+### Run & verify
+
+1. **Start the relay** in a dedicated terminal and keep it open: `bun socket > websocket.log 2>&1`. The log should begin with `WebSocket server running on port 3055`. Watch it live from a second terminal with `tail -f websocket.log`.
+2. **Confirm the MCP server** is connected in your client (Cursor: Settings → MCP; Claude Code: `claude mcp list`). It should list `TalkToFigma`.
+3. **Install the Figma plugin** — either from the [community page](https://www.figma.com/community/plugin/1485687494525374295/cursor-talk-to-figma-mcp-plugin) (URL slug fixed by Figma), or locally via Plugins → Development → Import plugin from manifest → `src/mcp_plugin/manifest.json`.
+4. **Run the plugin**, join a channel (default `ws://localhost:3055`); `websocket.log` should log the new connection.
+5. **End-to-end test** from your client: `join_channel` (expect success), then `get_document_info` (expect JSON from the document).
+
+### Troubleshooting
+
+- **MCP not connected** — confirm you're in the project root (`package.json` + `src/` present) and that `.mcp.json` or `.cursor/mcp.json` exists (re-run `bun setup`), then reload the client so it re-reads its MCP config.
+- **Port 3055 busy** — macOS/Linux: `lsof -ti:3055 | xargs kill -9`; Windows: `netstat -ano | findstr 3055` then `taskkill /PID <pid> /F`.
+- **Plugin won't connect** — the relay must be running, the plugin URL must be `ws://localhost:3055`, and nothing may block localhost:3055. Watch `websocket.log` and reconnect the plugin.
 
 ## Agent Notes
 
